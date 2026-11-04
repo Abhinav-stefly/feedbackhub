@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
 import { loadEnv } from './config/env.js';
 
-const app = createApp();
+// A fake "database is healthy" check. No real database needed for these tests.
+const app = createApp({ checkDatabase: async () => {} });
 
 describe('GET /api/health', () => {
   it('returns 200 and a status payload', async () => {
@@ -16,6 +17,28 @@ describe('GET /api/health', () => {
     const res = await request(app).get('/api/health');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['x-powered-by']).toBeUndefined();
+  });
+});
+
+describe('GET /api/health/ready', () => {
+  it('returns 200 when the database check passes', async () => {
+    const res = await request(app).get('/api/health/ready');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'ok', database: 'up' });
+  });
+
+  it('returns 503 when the database check fails, hiding the real error', async () => {
+    const broken = createApp({
+      checkDatabase: async () => {
+        throw new Error('password authentication failed for user "feedbackhub"');
+      },
+    });
+    const res = await request(broken).get('/api/health/ready');
+    expect(res.status).toBe(503);
+    expect(res.body).toEqual({
+      error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is unavailable' },
+    });
+    expect(JSON.stringify(res.body)).not.toContain('password');
   });
 });
 
@@ -45,8 +68,13 @@ describe('error handling', () => {
 });
 
 describe('loadEnv', () => {
+  const valid = {
+    WEB_ORIGIN: 'http://localhost:5173',
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+  };
+
   it('applies defaults', () => {
-    const env = loadEnv({ WEB_ORIGIN: 'http://localhost:5173' });
+    const env = loadEnv(valid);
     expect(env.PORT).toBe(4000);
     expect(env.NODE_ENV).toBe('development');
   });
@@ -55,5 +83,11 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ WEB_ORIGIN: 'not-a-url', PORT: 'abc' })).toThrow(
       /Invalid environment configuration/,
     );
+  });
+
+  it('rejects a DATABASE_URL that is not a postgres URL, without echoing it', () => {
+    const attempt = () => loadEnv({ ...valid, DATABASE_URL: 'mysql://secret-user:secret-pw@h/db' });
+    expect(attempt).toThrow(/DATABASE_URL/);
+    expect(attempt).not.toThrow(/secret-pw/);
   });
 });

@@ -1,0 +1,21 @@
+# Local PostgreSQL for development and tests.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: feedbackhub
+      POSTGRES_PASSWORD: feedbackhub_dev_only
+      POSTGRES_DB: feedbackhub
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Scripts in this folder run ONCE, the first time the database is created.
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U feedbackhub']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  pgdata:

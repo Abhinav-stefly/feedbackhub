@@ -9,6 +9,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(0).max(65535).default(4000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   WEB_ORIGIN: z.url(),
+  DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, 'must start with postgresql://'),
 });
 
 export type Env = z.infer<typeof envSchema>;

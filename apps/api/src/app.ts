@@ -1,16 +1,31 @@
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
+import type { PrismaClient } from './generated/prisma/client.js';
 import { HttpError } from './lib/httpError.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { createAuthRouter } from './modules/auth/auth.routes.js';
+
+export interface AppConfig {
+  /** The one website allowed to use cookie-authenticated routes, e.g. http://localhost:5173 */
+  webOrigin: string;
+  /** Mark cookies HTTPS-only. True in production. */
+  secureCookies: boolean;
+  /** Override the login/register rate limit (tests use this). */
+  authRateLimit?: { windowMs: number; limit: number };
+}
 
 /**
  * Things the app needs from the outside world. We PASS THEM IN instead of importing
- * them, so tests can supply fakes (a "database" that is up, or one that is down).
+ * them, so tests can supply fakes or a differently-configured copy.
  */
 export interface AppDependencies {
   checkDatabase: () => Promise<void>;
+  prisma: PrismaClient;
+  config: AppConfig;
 }
 
 /**
@@ -18,15 +33,17 @@ export interface AppDependencies {
  * from "listen" lets tests call the app directly (no real network port needed).
  */
 export function createApp(deps: AppDependencies) {
+  const { prisma, config } = deps;
   const app = express();
 
-  // We will run behind a hosting proxy in production; needed later for correct client IPs.
+  // We will run behind a hosting proxy in production; needed for correct client IPs.
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
   app.use(pinoHttp({ logger }));
   app.use(helmet()); // sensible security headers
   app.use(express.json({ limit: '100kb' })); // reject oversized bodies early
+  app.use(cookieParser());
 
   // Liveness: "is the process running?" Never touches the database.
   app.get('/api/health', (_req, res) => {
@@ -43,6 +60,13 @@ export function createApp(deps: AppDependencies) {
     }
     res.json({ status: 'ok', database: 'up' });
   });
+
+  // Cookie-based routes: only our own web app may call these from a browser.
+  app.use(
+    '/api/auth',
+    cors({ origin: config.webOrigin, credentials: true }),
+    createAuthRouter({ prisma, config }),
+  );
 
   app.use(notFoundHandler);
   app.use(errorHandler); // must be registered LAST

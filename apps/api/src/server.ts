@@ -3,7 +3,13 @@ import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { checkDatabase, prisma } from './lib/prisma.js';
 
-const server = createApp({ checkDatabase }).listen(env.PORT, () => {
+const app = createApp({
+  checkDatabase,
+  prisma,
+  config: { webOrigin: env.WEB_ORIGIN, secureCookies: env.NODE_ENV === 'production' },
+});
+
+const server = app.listen(env.PORT, () => {
   logger.info(`API listening on port ${env.PORT} (${env.NODE_ENV})`);
 });
 

@@ -8,7 +8,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(0).max(65535).default(4000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  WEB_ORIGIN: z.url(),
+  // Normalised to just scheme://host:port, so a trailing slash can't break origin checks.
+  WEB_ORIGIN: z.url().transform((value) => new URL(value).origin),
   DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, 'must start with postgresql://'),
 });
 

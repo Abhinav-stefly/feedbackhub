@@ -1,9 +1,9 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { HttpError, notFound } from '../lib/httpError.js';
 
-/** Every error response in the API has this exact shape: { error: { code, message } } */
-function body(code: string, message: string) {
-  return { error: { code, message } };
+/** Every error response in the API has this shape: { error: { code, message, details? } } */
+function body(code: string, message: string, details?: unknown) {
+  return { error: { code, message, ...(details === undefined ? {} : { details }) } };
 }
 
 export const notFoundHandler: RequestHandler = (_req, _res, next) => {
@@ -12,7 +12,7 @@ export const notFoundHandler: RequestHandler = (_req, _res, next) => {
 
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof HttpError) {
-    res.status(err.status).json(body(err.code, err.message));
+    res.status(err.status).json(body(err.code, err.message, err.details));
     return;
   }
 

@@ -1,10 +1,14 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-import { createApp } from './app.js';
+import { createApp, type AppDependencies } from './app.js';
 import { loadEnv } from './config/env.js';
 
+// These tests never touch the database, so a stand-in object is enough.
+const noDatabase = {} as AppDependencies['prisma'];
+const config = { webOrigin: 'http://localhost:5173', secureCookies: false };
+
 // A fake "database is healthy" check. No real database needed for these tests.
-const app = createApp({ checkDatabase: async () => {} });
+const app = createApp({ checkDatabase: async () => {}, prisma: noDatabase, config });
 
 describe('GET /api/health', () => {
   it('returns 200 and a status payload', async () => {
@@ -32,6 +36,8 @@ describe('GET /api/health/ready', () => {
       checkDatabase: async () => {
         throw new Error('password authentication failed for user "feedbackhub"');
       },
+      prisma: noDatabase,
+      config,
     });
     const res = await request(broken).get('/api/health/ready');
     expect(res.status).toBe(503);
@@ -77,6 +83,11 @@ describe('loadEnv', () => {
     const env = loadEnv(valid);
     expect(env.PORT).toBe(4000);
     expect(env.NODE_ENV).toBe('development');
+  });
+
+  it('normalises WEB_ORIGIN so a trailing slash cannot break origin checks', () => {
+    const env = loadEnv({ ...valid, WEB_ORIGIN: 'http://localhost:5173/' });
+    expect(env.WEB_ORIGIN).toBe('http://localhost:5173');
   });
 
   it('fails loudly on invalid values without echoing them', () => {

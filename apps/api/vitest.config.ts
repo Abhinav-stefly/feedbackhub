@@ -4,6 +4,8 @@ import { TEST_DATABASE_URL } from './src/test/testDbUrl.js';
 export default defineConfig({
   test: {
     environment: 'node',
+    // Test files share ONE database, so they must run one after another.
+    fileParallelism: false,
     globalSetup: ['./src/test/globalSetup.ts'],
     // Tests must never depend on a developer's local .env file.
     env: {

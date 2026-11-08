@@ -1,5 +1,6 @@
-import { Prisma, type PrismaClient } from '../../generated/prisma/client.js';
+import type { PrismaClient } from '../../generated/prisma/client.js';
 import { HttpError } from '../../lib/httpError.js';
+import { isUniqueViolation } from '../../lib/prismaErrors.js';
 import type { LoginInput, RegisterInput } from './auth.schemas.js';
 import { getDummyHash, hashPassword, verifyPassword } from './password.js';
 
@@ -16,10 +17,6 @@ export const publicUserSelect = {
 } as const;
 
 export type PublicUser = { id: string; email: string; name: string; createdAt: Date };
-
-function isUniqueViolation(err: unknown): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
-}
 
 export async function registerUser(
   prisma: PrismaClient,

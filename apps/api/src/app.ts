@@ -8,6 +8,8 @@ import { HttpError } from './lib/httpError.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
+import { createProjectsRouter } from './modules/projects/project.routes.js';
+import { createWorkspacesRouter } from './modules/workspaces/workspaces.routes.js';
 
 export interface AppConfig {
   /** The one website allowed to use cookie-authenticated routes, e.g. http://localhost:5173 */
@@ -62,12 +64,11 @@ export function createApp(deps: AppDependencies) {
   });
 
   // Cookie-based routes: only our own web app may call these from a browser.
-  app.use(
-    '/api/auth',
-    cors({ origin: config.webOrigin, credentials: true }),
-    createAuthRouter({ prisma, config }),
-  );
-
+  // Cookie-based routes: only our own web app may call these from a browser.
+  const dashboardCors = cors({ origin: config.webOrigin, credentials: true });
+  app.use('/api/auth', dashboardCors, createAuthRouter({ prisma, config }));
+  app.use('/api/workspaces', dashboardCors, createWorkspacesRouter({ prisma, config }));
+  app.use('/api/projects', dashboardCors, createProjectsRouter({ prisma, config }));
   app.use(notFoundHandler);
   app.use(errorHandler); // must be registered LAST
 

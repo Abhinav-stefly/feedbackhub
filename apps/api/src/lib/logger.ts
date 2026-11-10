@@ -11,6 +11,7 @@ export const logger = pino({
     paths: [
       'req.headers.authorization',
       'req.headers.cookie',
+      'req.headers["x-voter-id"]',
       'res.headers["set-cookie"]',
       '*.password',
       '*.passwordHash',

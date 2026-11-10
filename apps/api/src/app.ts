@@ -8,8 +8,17 @@ import { HttpError } from './lib/httpError.js';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
+import { createPublicRouter } from './modules/public/public.routes.js';
 import { createProjectsRouter } from './modules/projects/project.routes.js';
 import { createWorkspacesRouter } from './modules/workspaces/workspaces.routes.js';
+
+export interface PublicLimits {
+  submit: { windowMs: number; limit: number };
+  vote: { windowMs: number; limit: number };
+  read: { windowMs: number; limit: number };
+  /** Most feedback items one project accepts in 24 hours, from everyone combined. */
+  dailySubmissionCapPerProject: number;
+}
 
 export interface AppConfig {
   /** The one website allowed to use cookie-authenticated routes, e.g. http://localhost:5173 */
@@ -18,6 +27,8 @@ export interface AppConfig {
   secureCookies: boolean;
   /** Override the login/register rate limit (tests use this). */
   authRateLimit?: { windowMs: number; limit: number };
+  /** Override the public widget API limits (tests use this). */
+  publicLimits?: Partial<PublicLimits>;
 }
 
 /**
@@ -44,6 +55,11 @@ export function createApp(deps: AppDependencies) {
 
   app.use(pinoHttp({ logger }));
   app.use(helmet()); // sensible security headers
+
+  // PUBLIC routes come BEFORE the cookie and JSON middleware below: they have their own
+  // tiny body limit and must never touch cookies.
+  app.use('/api/public', createPublicRouter({ prisma, config }));
+
   app.use(express.json({ limit: '100kb' })); // reject oversized bodies early
   app.use(cookieParser());
 
@@ -64,11 +80,11 @@ export function createApp(deps: AppDependencies) {
   });
 
   // Cookie-based routes: only our own web app may call these from a browser.
-  // Cookie-based routes: only our own web app may call these from a browser.
   const dashboardCors = cors({ origin: config.webOrigin, credentials: true });
   app.use('/api/auth', dashboardCors, createAuthRouter({ prisma, config }));
   app.use('/api/workspaces', dashboardCors, createWorkspacesRouter({ prisma, config }));
   app.use('/api/projects', dashboardCors, createProjectsRouter({ prisma, config }));
+
   app.use(notFoundHandler);
   app.use(errorHandler); // must be registered LAST
 

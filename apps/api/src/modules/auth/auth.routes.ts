@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import type { AppConfig } from '../../app.js';
 import type { PrismaClient } from '../../generated/prisma/client.js';
-import { HttpError } from '../../lib/httpError.js';
 import { parse } from '../../lib/validate.js';
+import { createRateLimiter } from '../../middleware/rateLimiter.js';
 import { createRequireAuth } from '../../middleware/requireAuth.js';
 import { requireTrustedOrigin } from '../../middleware/trustedOrigin.js';
 import { loginSchema, registerSchema } from './auth.schemas.js';
@@ -22,13 +21,9 @@ export function createAuthRouter({ prisma, config }: { prisma: PrismaClient; con
   const cookieOptions = sessionCookieOptions(config.secureCookies);
 
   // Counts attempts per IP address. Shared by register and login.
-  const limiter = rateLimit({
+  const limiter = createRateLimiter({
     windowMs: config.authRateLimit?.windowMs ?? 15 * 60 * 1000,
     limit: config.authRateLimit?.limit ?? 10,
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    handler: (_req, _res, next) =>
-      next(new HttpError(429, 'RATE_LIMITED', 'Too many attempts. Please try again later.')),
   });
 
   router.use(requireTrustedOrigin(config.webOrigin));

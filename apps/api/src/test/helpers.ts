@@ -14,6 +14,12 @@ export function buildApp(config: Partial<AppConfig> = {}) {
       webOrigin: WEB_ORIGIN,
       secureCookies: false,
       authRateLimit: { windowMs: 60_000, limit: 1000 }, // generous: tests make many requests
+      publicLimits: {
+        submit: { windowMs: 60_000, limit: 1000 },
+        vote: { windowMs: 60_000, limit: 1000 },
+        read: { windowMs: 60_000, limit: 1000 },
+        dailySubmissionCapPerProject: 1000,
+      },
       ...config,
     },
   });

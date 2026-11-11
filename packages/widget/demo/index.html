@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acme Shop: demo page for the FeedbackHub widget</title>
+    <link rel="stylesheet" href="/demo.css" />
+    __EXTRA_HEAD__
+  </head>
+  <body>
+    <header>
+      <h1>Acme Shop</h1>
+      <nav>
+        <a href="#products">Products</a> <a href="#about">About</a> <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <p class="lead">
+        This is an ordinary website with plain HTML, no React, no build step. The FeedbackHub widget
+        is added with <strong>one script tag</strong> at the bottom of the page.
+      </p>
+
+      <section id="products">
+        <h2>Products</h2>
+        <p>Handmade mugs, notebooks and stickers.</p>
+        <button type="button">Add to basket</button>
+        <input type="text" aria-label="Search" placeholder="Search the shop" />
+      </section>
+
+      <section id="about">
+        <h2>About us</h2>
+        <p>The widget lives inside a Shadow DOM, so none of this page's styles can break it.</p>
+      </section>
+
+      <section id="contact">
+        <h2>How the widget was installed</h2>
+        <pre>__SNIPPET__</pre>
+      </section>
+    </main>
+
+    __WIDGET_SCRIPT__
+  </body>
+</html>

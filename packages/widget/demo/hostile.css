@@ -1,0 +1,25 @@
+/* Deliberately nasty host-page CSS, to prove the widget is isolated from it. */
+* {
+  font-size: 48px !important;
+  color: red !important;
+  letter-spacing: 8px !important;
+  text-transform: uppercase !important;
+}
+button,
+input,
+textarea,
+select,
+label,
+h2,
+p {
+  display: none !important;
+}
+div,
+span {
+  border: 4px dashed red !important;
+}
+#feedbackhub-widget {
+  font-size: 60px !important;
+  line-height: 5 !important;
+  color: lime !important;
+}

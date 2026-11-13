@@ -1,7 +1,5 @@
 import { z } from 'zod';
-
-/** Postgres cannot store the NUL character; an attacker could use it to trigger a server error. */
-const noNulChars = (value: string) => !value.includes('\u0000');
+import { noNulChars } from '../../lib/textRules.js';
 
 // strictObject: customers may ONLY send these three fields. They can never set
 // status, visibility, project, or anything else.

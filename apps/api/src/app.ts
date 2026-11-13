@@ -11,7 +11,8 @@ import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createPublicRouter } from './modules/public/public.routes.js';
 import { createProjectsRouter } from './modules/projects/project.routes.js';
 import { createWorkspacesRouter } from './modules/workspaces/workspaces.routes.js';
-
+import { createCommentsRouter } from './modules/feedback/comment.routes.js';
+import { createFeedbackRouter } from './modules/feedback/feedback.routes.js';
 export interface PublicLimits {
   submit: { windowMs: number; limit: number };
   vote: { windowMs: number; limit: number };
@@ -84,7 +85,8 @@ export function createApp(deps: AppDependencies) {
   app.use('/api/auth', dashboardCors, createAuthRouter({ prisma, config }));
   app.use('/api/workspaces', dashboardCors, createWorkspacesRouter({ prisma, config }));
   app.use('/api/projects', dashboardCors, createProjectsRouter({ prisma, config }));
-
+  app.use('/api/feedback', dashboardCors, createFeedbackRouter({ prisma, config }));
+  app.use('/api/comments', dashboardCors, createCommentsRouter({ prisma, config }));
   app.use(notFoundHandler);
   app.use(errorHandler); // must be registered LAST
 

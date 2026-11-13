@@ -15,6 +15,12 @@ const PERMISSIONS = {
   'project:update': ['OWNER', 'ADMIN'],
   'project:archive': ['OWNER', 'ADMIN'],
   'project:setRoadmapVisibility': ['OWNER'],
+  // Feedback: everyone on the team may READ and COMMENT; changing things is for admins and up.
+  'feedback:comment': ['OWNER', 'ADMIN', 'MEMBER'],
+  'feedback:triage': ['OWNER', 'ADMIN'], // status, type, title, description
+  'feedback:publish': ['OWNER', 'ADMIN'], // show or hide an item on the public board
+  'feedback:archive': ['OWNER', 'ADMIN'],
+  'comment:moderate': ['OWNER', 'ADMIN'], // delete somebody else's comment
 } as const satisfies Record<string, readonly WorkspaceRole[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

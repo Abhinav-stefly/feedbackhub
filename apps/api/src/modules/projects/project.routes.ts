@@ -4,6 +4,8 @@ import type { PrismaClient } from '../../generated/prisma/client.js';
 import { parse, parseId } from '../../lib/validate.js';
 import { createRequireAuth, getUser } from '../../middleware/requireAuth.js';
 import { requireTrustedOrigin } from '../../middleware/trustedOrigin.js';
+import { listFeedbackQuerySchema } from '../feedback/feedback.schemas.js';
+import { listFeedback } from '../feedback/feedback.service.js';
 import { getProjectAccess } from '../workspaces/access.js';
 import { assertCan } from '../workspaces/permissions.js';
 import { updateProjectSchema } from './project.schemas.js';
@@ -28,6 +30,17 @@ export function createProjectsRouter({
       parseId(req.params.projectId),
     );
     res.json({ project, role });
+  });
+
+  // The team's inbox: every feedback item of this project, with filters, search and paging.
+  router.get('/:projectId/feedback', async (req, res) => {
+    const { project } = await getProjectAccess(
+      prisma,
+      getUser(req).id,
+      parseId(req.params.projectId),
+    );
+    const query = parse(listFeedbackQuerySchema, req.query);
+    res.json(await listFeedback(prisma, project.id, query));
   });
 
   router.patch('/:projectId', async (req, res) => {
